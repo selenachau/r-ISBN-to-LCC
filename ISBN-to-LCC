@@ -1,0 +1,35 @@
+# Use the OCLC Classify API Explorer to retrieve the recommended Library of Congress Classification for a list of ISNBs. http://classify.oclc.org/classify2/api_docs/classify.html
+
+# install packages
+install.packages(c("httr", "tidyverse", "readxl", "writexl"))
+library(httr)
+library(tidyverse)
+library(readxl)
+library(writexl)
+
+# define & run functions using http://classify.oclc.org/classify2/api_docs/classify.html#examples 
+fun_concat <- function(isbn){paste("http://classify.oclc.org/classify2/Classify?isbn=",isbn, collapse=NULL, sep="")}
+
+fun_getLCC <- function(isbn){
+  call <- paste("http://classify.oclc.org/classify2/Classify?isbn=",isbn, collapse=NULL, sep="")
+  get_isbn <- GET(url=call) 
+ get_isbn_text <- content(get_isbn, "text", encoding = "UTF-8")
+ gsub(".*[sfa=\"]([^\"]+)[\"].*","\\1", get_isbn_text)
+}
+
+# create vector of isbn numbers, below as example
+isbn_list <- c(9781911414407,
+9781911414537,
+9781912894925)
+
+# or, load isbn list from excel with column name and convert to vector
+isbn_list <- read_xlsx("~/Documents/isbn_list.xlsx", col_names = TRUE, col_types="numeric")
+isbn_list <- isbn_list[['isbns']]   #'isbns' is column name in excel sheet
+
+# structure isbns and lccs in dataframe
+lccs <- sapply(isbn_list,fun_getLCC)
+isbns <- as.character(isbn_list)
+isbn_lcc_df <- data.frame(isbns,lccs)
+
+#export df to spreadsheet
+write_xlsx(isbn_lcc_df, '~/Documents/data.xlsx') #mac Documents folder
